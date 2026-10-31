@@ -89,6 +89,7 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use('/api/events/:id/plan', aiLimit);
   app.use('/api/events/:id/invitation', aiLimit);
   app.use('/api/events/:id/creative', aiLimit);
+  app.use('/api/ai/intake', rateLimit({ windowMs: 10 * 60_000, limit: 80, standardHeaders: 'draft-7', legacyHeaders: false, message: limited('You have chatted a lot just now. Please wait a few minutes.') }));
   app.use('/api/events', auth, eventsRouter());
   app.use('/api', auth, guestsRouter(), budgetRouter(), aiRouter(llm));
   app.use('/api', (_req, _res, next) => next(new HttpError(404, 'That API route does not exist.', 'not_found')));
