@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from './api';
 import type { EventItem } from './types';
+import { emojiFor } from './CardDesigner';
 import { confetti, daysUntil, errorText, formatDate, money, useToast } from './ui';
 
 const TYPES = ['Birthday', 'Wedding', 'Anniversary', 'Baby shower', 'Corporate', 'Festival', 'Graduation', 'Other'];
@@ -87,7 +88,7 @@ export default function Dashboard() {
                 {d !== null && d >= 0 && <span className="chip accent">{d === 0 ? 'Today' : d + (d === 1 ? ' day' : ' days') + ' to go'}</span>}
                 {ev.aiPlan && <span className="chip good">AI plan ready</span>}
               </div>
-              <h3>{ev.title}</h3>
+              <h3><span aria-hidden="true">{emojiFor(ev.eventType)}</span> {ev.title}</h3>
               <p className="muted">{formatDate(ev.eventDate)}{ev.location ? ' - ' + ev.location : ''}</p>
               <p className="meta">{ev.guestsInvited ?? 0} guests on the list - budget Rs {money(ev.budgetTotal)}</p>
             </Link>
