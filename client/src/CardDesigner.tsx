@@ -107,7 +107,7 @@ function text(d: CardData): string {
   const dark = d.style === 'elegant' || d.style === 'neon';
   const head = dark ? d.palette[2] : main;
   const body = dark ? d.palette[3] : ink;
-  const serif = d.style === 'elegant' || d.style === 'bloom' ? 'Georgia, "Times New Roman", serif' : 'system-ui, "Segoe UI", Arial, sans-serif';
+  const serif = d.style === 'elegant' || d.style === 'bloom' ? "Georgia, 'Times New Roman', serif" : "system-ui, 'Segoe UI', Arial, sans-serif";
   const left = d.style === 'minimal';
   const x = left ? 100 : W / 2;
   const anchor = left ? 'start' : 'middle';
