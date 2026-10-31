@@ -8,6 +8,20 @@ export interface Plan {
   tips: string[];
 }
 
+export interface Creative {
+  tagline: string;
+  palette: string[];
+  decor: string[];
+  menu: { course: string; idea: string }[];
+  playlist_vibes: string[];
+  activities: string[];
+  photo_booth: string[];
+  hashtag: string;
+  dress_code: string;
+  welcome_drink: string;
+  return_gifts: string[];
+}
+
 export interface EventItem {
   id: string;
   title: string;
@@ -18,6 +32,7 @@ export interface EventItem {
   budgetTotal: number;
   description: string;
   aiPlan: Plan | null;
+  aiCreative: Creative | null;
   createdAt: string;
   updatedAt: string;
   guestsInvited?: number;
