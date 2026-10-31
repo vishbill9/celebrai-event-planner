@@ -96,6 +96,22 @@ describe('ollama client', () => {
     expect(calls).toEqual(['glm-5.3', 'nemotron-3-super']);
   });
 
+  it('retries an empty JSON answer once on the same model without forced JSON', async () => {
+    const bodies: { model: string; format?: string }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: { body: string }) => {
+        bodies.push(JSON.parse(init.body));
+        const content = bodies.length === 1 ? '' : '{"ok":true}';
+        return new Response(JSON.stringify({ message: { content } }), { status: 200 });
+      }),
+    );
+    expect(await chat([{ role: 'user', content: 'hi' }], { json: true })).toBe('{"ok":true}');
+    expect(bodies.map(b => b.model)).toEqual(['glm-5.3', 'glm-5.3']);
+    expect(bodies[0].format).toBe('json');
+    expect(bodies[1].format).toBeUndefined();
+  });
+
   it('uses the second backup when the first backup fails too', async () => {
     const calls: string[] = [];
     vi.stubGlobal(
