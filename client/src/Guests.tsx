@@ -68,6 +68,12 @@ export default function Guests({ eventId, guests, onChange }: Props) {
       <div className="chip-row summary-row">
         {(['yes', 'maybe', 'pending', 'no'] as Rsvp[]).map(r => <span key={r} className="chip">{LABEL[r]}: {count(r)}</span>)}
       </div>
+      {guests.length > 0 && (
+        <button className="btn ghost small" onClick={() => {
+          const lines = guests.map(g => g.name + ' - ' + LABEL[g.rsvp] + (g.plusOnes ? ' (+' + g.plusOnes + ')' : ''));
+          navigator.clipboard.writeText(lines.join('\n')).then(() => toast.show('Guest list copied.'), () => toast.show('Copy is not available here.', 'error'));
+        }}>Copy guest list</button>
+      )}
       {guests.length === 0 ? <p className="empty">No guests yet. Add the first one above.</p> : (
         <div className="card table-wrap">
           <table className="table">
