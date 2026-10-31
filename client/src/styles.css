@@ -60,6 +60,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .chip.good { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
 .chip.pick { cursor: pointer; font: inherit; font-weight: 700; padding: .5rem 1rem; min-height: 40px; border: 1px solid var(--line); background: transparent; }
 .chip.pick.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.moodboard .chip, .moodboard .chip.pick { background: rgba(255,255,255,.78); color: #1a1230; border: 0; }
+.moodboard .eyebrow { color: inherit; opacity: .75; }
 .summary-row { margin: 0; }
 
 .hero .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 1rem 0; }
