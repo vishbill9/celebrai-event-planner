@@ -1,0 +1,19 @@
+{
+  "name": "celebrai-event-planner",
+  "version": "1.0.0",
+  "description": "CelebrAI: an AI event planner with guest lists, RSVPs and budgets. React + Express + Supabase + Ollama Cloud GLM-5.3.",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "install:all": "npm --prefix server install --include=dev && npm --prefix client install --include=dev",
+    "build": "npm run build --prefix client && npm run build --prefix server",
+    "start": "node server/dist/index.js",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "test": "npm test --prefix server",
+    "typecheck": "npm run typecheck --prefix server && npm run typecheck --prefix client"
+  }
+}
