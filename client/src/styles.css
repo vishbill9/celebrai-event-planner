@@ -111,3 +111,27 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   .who { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Studio, designer and polish */
+.eyebrow { text-transform: uppercase; letter-spacing: .16em; font-size: .75rem; font-weight: 800; opacity: .7; margin: 0 0 .25rem; }
+.moodboard { padding: 26px 22px; border: 0; }
+.tagline { font-size: clamp(1.5rem, 5vw, 2.2rem); margin-bottom: 1rem; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+.swatch { height: 84px; border-radius: 14px; border: 2px solid rgba(255,255,255,.7); cursor: pointer; display: flex; align-items: flex-end; padding: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+.swatch span { font: 700 .72rem ui-monospace, monospace; background: rgba(255,255,255,.85); color: #222; border-radius: 6px; padding: 1px 6px; }
+.chips-inline { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.studio-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.idea-list { margin: 0; padding-left: 1.1rem; display: grid; gap: 6px; }
+.designer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 16px; }
+.designer-preview { padding: 12px; position: sticky; top: 70px; }
+.designer-preview img { width: 100%; height: auto; display: block; border-radius: 10px; }
+.designer-controls { display: grid; gap: 12px; }
+.row-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; justify-content: space-between; }
+.emoji-input { width: 90px; }
+.check-row { display: flex; align-items: center; gap: 8px; }
+.small-note { font-size: .85rem; margin: 0; }
+.stat-ring { position: relative; padding-left: 64px !important; min-height: 64px; align-content: center; }
+.stat-ring i { position: absolute; left: 10px; top: 50%; width: 44px; height: 44px; margin-top: -22px; border-radius: 50%; background: conic-gradient(var(--primary) calc(var(--p) * 1%), var(--line) 0); }
+.stat-ring i::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--bg); }
+.checklist label.done span { text-decoration: line-through; opacity: .55; }
+@media (max-width: 760px) { .designer { grid-template-columns: 1fr; } .designer-preview { position: static; } }
