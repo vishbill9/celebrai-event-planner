@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from './api';
 import type { EventItem } from './types';
 import { emojiFor } from './CardDesigner';
+import ChatIntake from './ChatIntake';
+import './chat.css';
+import type { EventInput } from './types';
 import { confetti, daysUntil, errorText, formatDate, money, useToast } from './ui';
 
 const TYPES = ['Birthday', 'Wedding', 'Anniversary', 'Baby shower', 'Corporate', 'Festival', 'Graduation', 'Other'];
@@ -11,6 +14,7 @@ export default function Dashboard() {
   const [events, setEvents] = useState<EventItem[] | null>(null);
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
+  const [classic, setClassic] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -20,20 +24,10 @@ export default function Dashboard() {
   }
   useEffect(load, []);
 
-  async function create(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
+  async function createFrom(input: Partial<EventInput>) {
     setCreating(true);
     try {
-      const event = await api.createEvent({
-        title: String(f.get('title') ?? ''),
-        eventType: String(f.get('eventType') ?? ''),
-        eventDate: String(f.get('eventDate') ?? '') || null,
-        location: String(f.get('location') ?? ''),
-        guestCount: Number(f.get('guestCount') || 0),
-        budgetTotal: Number(f.get('budgetTotal') || 0),
-        description: String(f.get('description') ?? ''),
-      });
+      const event = await api.createEvent(input);
       confetti();
       toast.show('Event created. Now let the AI plan it!');
       navigate('/events/' + event.id);
@@ -44,11 +38,29 @@ export default function Dashboard() {
     }
   }
 
+  function create(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    void createFrom({
+      title: String(f.get('title') ?? ''),
+      eventType: String(f.get('eventType') ?? ''),
+      eventDate: String(f.get('eventDate') ?? '') || null,
+      location: String(f.get('location') ?? ''),
+      guestCount: Number(f.get('guestCount') || 0),
+      budgetTotal: Number(f.get('budgetTotal') || 0),
+      description: String(f.get('description') ?? ''),
+    });
+  }
+
   return (
     <main className="page">
       <section className="card">
-        <h2>Start a new event</h2>
-        <form className="grid-form" onSubmit={create}>
+        <div className="card-head">
+          <h2>{classic ? 'Start a new event' : 'Plan something with your AI planner'}</h2>
+          <button className="link" onClick={() => setClassic(!classic)}>{classic ? 'Chat instead' : 'Use the classic form'}</button>
+        </div>
+        {!classic && <ChatIntake onCreate={input => void createFrom(input)} creating={creating} />}
+        {classic && <form className="grid-form" onSubmit={create}>
           <label className="span2">Event name
             <input name="title" required maxLength={120} placeholder="Asha's 30th birthday" />
           </label>
@@ -71,7 +83,7 @@ export default function Dashboard() {
             <textarea name="description" rows={3} maxLength={2000} placeholder="Fairy lights, live acoustic music, a surprise for Asha..." />
           </label>
           <div className="span2"><button className="btn primary" disabled={creating}>{creating ? 'Creating...' : 'Create event'}</button></div>
-        </form>
+        </form>}
       </section>
 
       <h2 className="section-title">Your events</h2>
