@@ -14,7 +14,7 @@ Common statuses: 400 invalid input, 401 not signed in, 404 not found (also for o
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/health` | `{status, version, environment, uptimeSeconds, timestamp, checks:{database, ai}}`. Add `?deep=1` to also probe Ollama Cloud, the main model and the backup model. No secrets. |
+| GET | `/health` | `{status, version, environment, uptimeSeconds, timestamp, checks:{database, ai}}`. Add `?deep=1` to also probe Ollama Cloud, the main model and each backup model. No secrets. |
 | GET | `/config` | `{configured, supabaseUrl, supabaseAnonKey}` for the browser client |
 
 ## Events
