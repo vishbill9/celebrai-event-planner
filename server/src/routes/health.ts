@@ -33,7 +33,7 @@ export function healthRouter(): Router {
       const ai = await probe();
       checks.aiReachable = ai.reachable;
       checks.aiModelAvailable = ai.modelAvailable;
-      checks.aiBackupModelAvailable = ai.fallbackAvailable;
+      checks.aiBackupModels = Object.entries(ai.backups).map(([m, ok]) => m + '=' + (ok ? 'available' : 'not_found')).join(', ') || 'none';
     }
     res.set('Cache-Control', 'no-store').json({
       status: database === 'error' ? 'degraded' : 'ok',
