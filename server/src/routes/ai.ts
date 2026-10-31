@@ -3,10 +3,10 @@ import { Router } from 'express';
 import { authOf } from '../middleware/auth.js';
 import { dbError, idSchema, notFound, parse, wrap } from '../lib/http.js';
 import { budgetOut, type BudgetRow, type EventRow } from '../lib/mappers.js';
-import { creativeMessages, invitationMessages, parseCreative, parsePlan, planMessages } from '../lib/prompts.js';
+import { creativeMessages, intakeMessages, invitationMessages, parseCreative, parseIntake, parsePlan, planMessages } from '../lib/prompts.js';
 import type { ChatMessage, ChatOptions } from '../lib/ollama.js';
 import { HttpError } from '../errors.js';
-import { invitationInput, planSchema } from '../schemas.js';
+import { intakeInput, invitationInput, planSchema } from '../schemas.js';
 
 export interface Llm {
   chat(messages: ChatMessage[], opts?: ChatOptions): Promise<string>;
@@ -45,6 +45,14 @@ export function aiRouter(llm: Llm): Router {
     const { error } = await db.from('events').update({ ai_creative: creative }).eq('id', id);
     if (error) throw dbError(error);
     res.json({ creative });
+  }));
+
+  // Chat intake: one conversational turn that returns a reply, the updated draft and tappable suggestions. Nothing is saved.
+  r.post('/ai/intake', wrap(async (req, res) => {
+    const { messages, draft } = parse(intakeInput, req.body ?? {});
+    const today = new Date().toISOString().slice(0, 10);
+    const raw = await llm.chat(intakeMessages(messages, draft, today), { json: true, maxTokens: 900 });
+    res.json(parseIntake(raw, draft));
   }));
 
   // Turn the AI budget breakdown into real budget lines.
