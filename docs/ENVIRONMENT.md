@@ -7,7 +7,7 @@ Names only live in `.env.example`. Real values are set in the Render dashboard (
 | `OLLAMA_API_KEY` | yes | **yes** | Bearer key for Ollama Cloud. Server only. |
 | `OLLAMA_BASE_URL` | yes | no | `https://ollama.com` |
 | `OLLAMA_MODEL` | yes | no | `glm-5.3` (the server also tries `glm-5.3:cloud` if the plain name is not found) |
-| `OLLAMA_FALLBACK_MODEL` | no | no | Backup model used once when the main model errors, times out or answers empty. Default `nemotron-3-super` (Nemotron Super 3 on Ollama Cloud); `off` disables it |
+| `OLLAMA_FALLBACK_MODEL` | no | no | Comma-separated backup models, tried in order when the main model errors, times out or answers empty. Default `nemotron-3-super,beam:cloud` (Nemotron Super 3, then beam); `off` disables them |
 | `SUPABASE_URL` | yes | no | Project URL, e.g. `https://abcd.supabase.co` |
 | `SUPABASE_ANON_KEY` | yes | no (public by design) | Used by the browser and by user-scoped API calls; RLS protects data |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | **yes** | Used only for the health-check database ping. Server only. |
