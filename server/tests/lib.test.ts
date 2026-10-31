@@ -96,11 +96,26 @@ describe('ollama client', () => {
     expect(calls).toEqual(['glm-5.3', 'nemotron-3-super']);
   });
 
-  it('raises the main error when the backup fails too, and can be switched off', async () => {
+  it('uses the second backup when the first backup fails too', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: { body: string }) => {
+        const model = JSON.parse(init.body).model as string;
+        calls.push(model);
+        if (model === 'beam:cloud') return new Response(JSON.stringify({ message: { content: 'From beam' } }), { status: 200 });
+        return new Response('boom', { status: 500 });
+      }),
+    );
+    expect(await chat([{ role: 'user', content: 'hi' }])).toBe('From beam');
+    expect(calls).toEqual(['glm-5.3', 'nemotron-3-super', 'beam:cloud']);
+  });
+
+  it('raises the main error when every backup fails too, and can be switched off', async () => {
     const fetchMock = vi.fn(async () => new Response('boom', { status: 500 }));
     vi.stubGlobal('fetch', fetchMock);
     await expect(chat([{ role: 'user', content: 'hi' }])).rejects.toMatchObject({ code: 'ai_error' });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     process.env.OLLAMA_FALLBACK_MODEL = 'off';
     fetchMock.mockClear();
     await expect(chat([{ role: 'user', content: 'hi' }])).rejects.toMatchObject({ code: 'ai_error' });
