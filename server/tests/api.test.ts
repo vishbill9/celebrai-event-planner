@@ -146,6 +146,27 @@ describe('AI plan', () => {
     expect(seen).toContain('playful');
   });
 
+  it('creates a creative concept and saves it', async () => {
+    const creative = JSON.stringify({
+      tagline: 'Golden hour, grown-up fun',
+      palette: ['#fff7ed', '#c2410c', '#f59e0b', '#431407', '#fed7aa'],
+      decor: ['Marigold garlands', 'Fairy-light canopy'],
+      menu: [{ course: 'Starter', idea: 'Chaat bar' }],
+      playlist_vibes: ['90s Bollywood'],
+      activities: ['Memory lane quiz'],
+      photo_booth: ['Retro frames'],
+      hashtag: '#Asha30',
+      dress_code: 'Festive pastel',
+      welcome_drink: 'Rose lemonade',
+      return_gifts: ['Mini diyas'],
+    });
+    const db = fakeDb(sampleEvent);
+    const app = createApp({ auth: authAs(db), llm: { chat: async () => creative } });
+    const res = await request(app).post('/api/events/' + EVENT_ID + '/creative').set(AUTH).expect(200);
+    expect(res.body.creative.palette).toHaveLength(5);
+    expect(db.updates[0]).toHaveProperty('ai_creative');
+  });
+
   it('refuses to add a budget before a plan exists', async () => {
     const app = createApp({ auth: authAs(fakeDb(sampleEvent)) });
     const res = await request(app).post('/api/events/' + EVENT_ID + '/plan/apply-budget').set(AUTH).expect(409);
