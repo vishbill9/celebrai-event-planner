@@ -29,34 +29,43 @@ export function stripThinking(text: string): string {
 async function ask(model: string, messages: ChatMessage[], opts: ChatOptions): Promise<string> {
   const { ollama } = getConfig();
   for (const name of candidateModels(model)) {
-    const timeout = AbortSignal.timeout(ollama.timeoutMs);
-    let res: Response;
-    try {
-      res = await fetch(ollama.baseUrl + '/api/chat', {
-        method: 'POST',
-        headers: { Authorization: 'Bearer ' + ollama.apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: name,
-          messages,
-          stream: false,
-          ...(opts.json ? { format: 'json' } : {}),
-          options: { temperature: 0.6, num_predict: opts.maxTokens ?? 3000 },
-        }),
-        signal: opts.signal ? AbortSignal.any([opts.signal, timeout]) : timeout,
-      });
-    } catch (e) {
-      const n = (e as Error).name;
-      if (n === 'TimeoutError' || n === 'AbortError') {
-        throw new AiError('The AI took too long to answer. Please try again.', 'ai_timeout', 504);
+    let empty = false;
+    // An empty answer is retried once on the same model with looser settings (no forced JSON, more room to think).
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const loose = attempt === 1;
+      const tokens = Math.min(Math.round((opts.maxTokens ?? 3000) * (loose ? 1.5 : 1)), 6000);
+      const timeout = AbortSignal.timeout(ollama.timeoutMs);
+      let res: Response;
+      try {
+        res = await fetch(ollama.baseUrl + '/api/chat', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + ollama.apiKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: name,
+            messages,
+            stream: false,
+            ...(opts.json && !loose ? { format: 'json' } : {}),
+            options: { temperature: 0.6, num_predict: tokens },
+          }),
+          signal: opts.signal ? AbortSignal.any([opts.signal, timeout]) : timeout,
+        });
+      } catch (e) {
+        const n = (e as Error).name;
+        if (n === 'TimeoutError' || n === 'AbortError') {
+          throw new AiError('The AI took too long to answer. Please try again.', 'ai_timeout', 504);
+        }
+        throw new AiError('The AI service could not be reached. Please try again.', 'ai_unreachable');
       }
-      throw new AiError('The AI service could not be reached. Please try again.', 'ai_unreachable');
+      if (res.status === 404) break; // model name not found: try the next candidate
+      if (!res.ok) throw new AiError('The AI service returned an error (' + res.status + '). Please try again.', 'ai_error');
+      const body = (await res.json()) as { message?: { content?: string }; done_reason?: string };
+      const out = stripThinking(body.message?.content ?? '');
+      if (out) return out;
+      empty = true;
+      logger.warn({ model: name, attempt, doneReason: body.done_reason }, 'AI returned an empty answer');
+      if (!opts.json) break; // nothing looser to try
     }
-    if (res.status === 404) continue; // model name not found: try the next candidate
-    if (!res.ok) throw new AiError('The AI service returned an error (' + res.status + '). Please try again.', 'ai_error');
-    const body = (await res.json()) as { message?: { content?: string } };
-    const out = stripThinking(body.message?.content ?? '');
-    if (!out) throw new AiError('The AI returned an empty answer. Please try again.', 'ai_empty');
-    return out;
+    if (empty) throw new AiError('The AI returned an empty answer. Please try again.', 'ai_empty');
   }
   throw new AiError('The configured AI model was not found.', 'ai_model_missing');
 }
