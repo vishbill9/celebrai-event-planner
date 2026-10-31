@@ -11,6 +11,7 @@ export interface EventRow {
   budget_total: number | string;
   description: string;
   ai_plan: unknown;
+  ai_creative?: unknown;
   created_at: string;
   updated_at: string;
   guests?: { count: number }[];
@@ -50,6 +51,7 @@ export function eventOut(r: EventRow) {
     budgetTotal: Number(r.budget_total),
     description: r.description,
     aiPlan: r.ai_plan ?? null,
+    aiCreative: r.ai_creative ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
