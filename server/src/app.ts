@@ -52,7 +52,7 @@ export function createApp(deps: AppDeps = {}): Express {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
           styleSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:'],
+          imgSrc: ["'self'", 'data:', 'blob:'],
           connectSrc: ["'self'", ...(cfg.supabase.url ? [cfg.supabase.url] : [])],
           fontSrc: ["'self'"],
           objectSrc: ["'none'"],
@@ -88,6 +88,7 @@ export function createApp(deps: AppDeps = {}): Express {
   const aiLimit = rateLimit({ windowMs: 10 * 60_000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false, message: limited('You have asked the AI a lot just now. Please wait a few minutes.') });
   app.use('/api/events/:id/plan', aiLimit);
   app.use('/api/events/:id/invitation', aiLimit);
+  app.use('/api/events/:id/creative', aiLimit);
   app.use('/api/events', auth, eventsRouter());
   app.use('/api', auth, guestsRouter(), budgetRouter(), aiRouter(llm));
   app.use('/api', (_req, _res, next) => next(new HttpError(404, 'That API route does not exist.', 'not_found')));
