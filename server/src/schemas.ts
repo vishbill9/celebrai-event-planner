@@ -93,3 +93,22 @@ export const planSchema = z.object({
   tips: z.array(text(300)).max(12).default([]),
 });
 export type Plan = z.infer<typeof planSchema>;
+
+const hex = z.string().trim().regex(/^#[0-9a-fA-F]{6}$/).catch('#7c3aed');
+const list = (max: number, len = 200) => z.array(z.string().trim().max(len).catch('')).max(max).default([]);
+
+/** The creative moodboard the model returns for an event. */
+export const creativeSchema = z.object({
+  tagline: text(160),
+  palette: z.array(hex).min(1).max(6).catch(['#7c3aed', '#ec4899', '#f59e0b', '#1e1b2e', '#faf7ff']),
+  decor: list(8),
+  menu: z.array(z.object({ course: text(60), idea: text(200) })).max(8).default([]),
+  playlist_vibes: list(8),
+  activities: list(8),
+  photo_booth: list(8),
+  hashtag: text(60),
+  dress_code: text(160),
+  welcome_drink: text(160),
+  return_gifts: list(6),
+});
+export type Creative = z.infer<typeof creativeSchema>;
