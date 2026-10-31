@@ -18,7 +18,7 @@ export interface Config {
   nodeEnv: string;
   isProd: boolean;
   port: number;
-  ollama: { apiKey: string; baseUrl: string; model: string; timeoutMs: number };
+  ollama: { apiKey: string; baseUrl: string; model: string; fallbackModel: string; timeoutMs: number };
   supabase: { url: string; anonKey: string; serviceRoleKey: string };
   frontendUrl: string;
   corsOrigins: string[];
@@ -26,6 +26,12 @@ export interface Config {
 }
 
 /** Read configuration at call time so tests and hosts can change the environment. */
+/** Empty means the default backup; "off" (or "none") means no backup. */
+function fallback(v: string): string {
+  if (!v) return 'nemotron-3-super';
+  return /^(off|none|false)$/i.test(v) ? '' : v;
+}
+
 export function getConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const frontendUrl = trimSlash(clean(env.FRONTEND_URL));
   const corsRaw = clean(env.CORS_ORIGIN) || frontendUrl;
@@ -37,6 +43,8 @@ export function getConfig(env: NodeJS.ProcessEnv = process.env): Config {
       apiKey: clean(env.OLLAMA_API_KEY),
       baseUrl: trimSlash(clean(env.OLLAMA_BASE_URL) || 'https://ollama.com'),
       model: clean(env.OLLAMA_MODEL) || 'glm-5.3',
+      // Backup model, tried once when the main one fails. Set OLLAMA_FALLBACK_MODEL=off to disable.
+      fallbackModel: fallback(clean(env.OLLAMA_FALLBACK_MODEL)),
       timeoutMs: Number(env.OLLAMA_TIMEOUT_MS) || 60_000,
     },
     supabase: {
