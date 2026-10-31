@@ -112,3 +112,31 @@ export const creativeSchema = z.object({
   return_gifts: list(6),
 });
 export type Creative = z.infer<typeof creativeSchema>;
+
+// Chat intake: the AI fills these fields as the host talks. Invalid or unknown values are dropped.
+const opt = <T extends z.ZodTypeAny>(t: T) => t.optional().catch(undefined);
+export const draftSchema = z.object({
+  title: opt(z.string().trim().max(120)),
+  eventType: opt(z.string().trim().max(60)),
+  eventDate: opt(day.nullable()),
+  location: opt(z.string().trim().max(160)),
+  guestCount: opt(z.number().int().min(0).max(5000)),
+  budgetTotal: opt(money),
+  description: opt(z.string().trim().max(2000)),
+});
+export type Draft = z.infer<typeof draftSchema>;
+
+export const intakeInput = z.object({
+  messages: z
+    .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().trim().min(1).max(600) }))
+    .min(1)
+    .max(30),
+  draft: draftSchema.default({}),
+});
+
+export const intakeOutSchema = z.object({
+  reply: z.string().trim().min(1).max(600),
+  fields: draftSchema.default({}),
+  suggestions: z.array(z.string().trim().min(1).max(60)).max(8).catch([]),
+  ready: z.boolean().catch(false),
+});
