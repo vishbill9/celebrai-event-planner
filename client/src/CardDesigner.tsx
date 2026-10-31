@@ -103,9 +103,9 @@ function art(d: CardData): string {
 }
 
 function text(d: CardData): string {
-  const [, main, accent, ink] = d.palette;
+  const [, , accent, ink] = d.palette;
   const dark = d.style === 'elegant' || d.style === 'neon';
-  const head = dark ? d.palette[2] : main;
+  const head = dark ? d.palette[2] : ink;
   const body = dark ? d.palette[3] : ink;
   const serif = d.style === 'elegant' || d.style === 'bloom' ? "Georgia, 'Times New Roman', serif" : "system-ui, 'Segoe UI', Arial, sans-serif";
   const left = d.style === 'minimal';
