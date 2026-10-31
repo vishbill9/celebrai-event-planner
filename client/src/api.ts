@@ -1,6 +1,6 @@
 // Small typed wrapper around the CelebrAI REST API. Every call carries the user's access token.
 import { getSupabase } from './supabase';
-import type { BudgetItem, EventInput, EventItem, Guest, Plan, Rsvp } from './types';
+import type { BudgetItem, Creative, EventInput, EventItem, Guest, Plan, Rsvp } from './types';
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) {
@@ -48,6 +48,7 @@ export const api = {
   deleteBudget: (id: string) => call<{ ok: true }>('DELETE', '/budget/' + id),
 
   generatePlan: (eventId: string) => call<{ plan: Plan }>('POST', '/events/' + eventId + '/plan').then(r => r.plan),
+  generateCreative: (eventId: string) => call<{ creative: Creative }>('POST', '/events/' + eventId + '/creative').then(r => r.creative),
   applyPlanBudget: (eventId: string) => call<{ items: BudgetItem[] }>('POST', '/events/' + eventId + '/plan/apply-budget').then(r => r.items),
   writeInvitation: (eventId: string, tone: string) => call<{ text: string }>('POST', '/events/' + eventId + '/invitation', { tone }).then(r => r.text),
 };
