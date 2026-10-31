@@ -167,6 +167,33 @@ describe('AI plan', () => {
     expect(db.updates[0]).toHaveProperty('ai_creative');
   });
 
+  it('chat intake merges new fields into the draft and returns suggestions', async () => {
+    const answer = JSON.stringify({
+      reply: 'Lovely! When is it?',
+      fields: { title: "Asha's 30th birthday", eventType: 'Birthday', guestCount: 'lots' },
+      suggestions: ['This Saturday', 'Next month'],
+      ready: true,
+    });
+    const app = createApp({ auth: authAs(fakeDb(sampleEvent)), llm: { chat: async () => answer } });
+    const res = await request(app)
+      .post('/api/ai/intake')
+      .set(AUTH)
+      .send({ messages: [{ role: 'user', content: 'Birthday for Asha' }], draft: { location: 'Goa' } })
+      .expect(200);
+    expect(res.body.draft).toMatchObject({ title: "Asha's 30th birthday", eventType: 'Birthday', location: 'Goa' });
+    expect(res.body.draft.guestCount).toBeUndefined();
+    expect(res.body.suggestions).toHaveLength(2);
+    expect(res.body.ready).toBe(true);
+  });
+
+  it('chat intake survives a plain-text AI answer and rejects an empty chat', async () => {
+    const app = createApp({ auth: authAs(fakeDb(sampleEvent)), llm: { chat: async () => 'Sounds fun, tell me more!' } });
+    const ok = await request(app).post('/api/ai/intake').set(AUTH).send({ messages: [{ role: 'user', content: 'hi' }] }).expect(200);
+    expect(ok.body.reply).toContain('Sounds fun');
+    expect(ok.body.ready).toBe(false);
+    await request(app).post('/api/ai/intake').set(AUTH).send({ messages: [] }).expect(400);
+  });
+
   it('refuses to add a budget before a plan exists', async () => {
     const app = createApp({ auth: authAs(fakeDb(sampleEvent)) });
     const res = await request(app).post('/api/events/' + EVENT_ID + '/plan/apply-budget').set(AUTH).expect(409);
