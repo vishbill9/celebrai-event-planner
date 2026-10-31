@@ -1,4 +1,4 @@
-// Client for Ollama Cloud (GLM-5.3, with Nemotron Super 3 as the backup model). The API key is read here and never leaves the server.
+// Client for Ollama Cloud (GLM-5.3, with Nemotron Super 3 and beam:cloud as backups). The API key is read here and never leaves the server.
 // If the AI fails we raise an honest error. We never fabricate an answer.
 import { getConfig } from '../config.js';
 import { AiError } from '../errors.js';
@@ -62,8 +62,8 @@ async function ask(model: string, messages: ChatMessage[], opts: ChatOptions): P
 }
 
 /**
- * One-shot chat completion. Tries the main model; if it fails, tries the backup model once.
- * If both fail, the main model's error is raised. We never fabricate an answer.
+ * One-shot chat completion. Tries the main model, then each backup model in order.
+ * If all fail, the main model's error is raised. We never fabricate an answer.
  */
 export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Promise<string> {
   const { ollama } = getConfig();
@@ -71,33 +71,38 @@ export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Pro
   try {
     return await ask(ollama.model, messages, opts);
   } catch (first) {
-    const backup = ollama.fallbackModel;
-    if (!backup || backup === ollama.model || opts.signal?.aborted) throw first;
-    logger.warn({ model: ollama.model, backup, code: (first as AiError).code }, 'AI main model failed, trying backup model');
-    try {
-      return await ask(backup, messages, opts);
-    } catch (second) {
-      logger.error({ backup, code: (second as AiError).code }, 'AI backup model failed too');
-      throw first;
+    let last: unknown = first;
+    for (const backup of ollama.fallbackModels) {
+      if (backup === ollama.model) continue;
+      if (opts.signal?.aborted) break;
+      logger.warn({ failed: ollama.model, backup, code: (last as AiError).code }, 'AI model failed, trying backup model');
+      try {
+        return await ask(backup, messages, opts);
+      } catch (e) {
+        last = e;
+      }
     }
+    if (ollama.fallbackModels.length) logger.error({ code: (last as AiError).code }, 'AI backup models failed too');
+    throw first;
   }
 }
 
 /** Cheap reachability check for /api/health?deep=1. Reports booleans only, never details. */
-export async function probe(): Promise<{ reachable: boolean; modelAvailable: boolean; fallbackAvailable: boolean }> {
+export async function probe(): Promise<{ reachable: boolean; modelAvailable: boolean; backups: Record<string, boolean> }> {
   const { ollama } = getConfig();
-  if (!ollama.apiKey) return { reachable: false, modelAvailable: false, fallbackAvailable: false };
+  if (!ollama.apiKey) return { reachable: false, modelAvailable: false, backups: {} };
   try {
     const res = await fetch(ollama.baseUrl + '/api/tags', {
       headers: { Authorization: 'Bearer ' + ollama.apiKey },
       signal: AbortSignal.timeout(10_000),
     });
-    if (!res.ok) return { reachable: false, modelAvailable: false, fallbackAvailable: false };
+    if (!res.ok) return { reachable: false, modelAvailable: false, backups: {} };
     const names = (((await res.json()) as { models?: { name: string }[] }).models ?? []).map(m => m.name);
     const wanted = candidateModels(ollama.model);
-    const backup = ollama.fallbackModel ? candidateModels(ollama.fallbackModel) : [];
-    return { reachable: true, modelAvailable: names.some(n => wanted.includes(n)), fallbackAvailable: names.some(n => backup.includes(n)) };
+    const backups: Record<string, boolean> = {};
+    for (const b of ollama.fallbackModels) backups[b] = names.some(n => candidateModels(b).includes(n));
+    return { reachable: true, modelAvailable: names.some(n => wanted.includes(n)), backups };
   } catch {
-    return { reachable: false, modelAvailable: false, fallbackAvailable: false };
+    return { reachable: false, modelAvailable: false, backups: {} };
   }
 }
