@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from './api';
 import type { EventItem } from './types';
 import { errorText, money, useToast } from './ui';
@@ -16,6 +16,26 @@ export default function PlanView({ event, onEvent, hasBudget, onBudget }: Props)
   const [error, setError] = useState('');
   const toast = useToast();
   const plan = event.aiPlan;
+  const key = 'celebrai-checks-' + event.id;
+  const [done, setDone] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      setDone(JSON.parse(localStorage.getItem(key) ?? '{}'));
+    } catch {
+      setDone({});
+    }
+  }, [key]);
+  function toggle(i: number) {
+    const next = { ...done, [i]: !done[i] };
+    setDone(next);
+    try {
+      localStorage.setItem(key, JSON.stringify(next));
+    } catch {
+      /* storage unavailable: progress simply is not remembered */
+    }
+  }
+  const total = plan?.checklist.length ?? 0;
+  const finished = plan ? plan.checklist.filter((_, i) => done[i]).length : 0;
 
   async function generate() {
     setBusy(true);
@@ -69,11 +89,12 @@ export default function PlanView({ event, onEvent, hasBudget, onBudget }: Props)
           </div>
 
           <div className="card">
-            <h3>Checklist</h3>
+            <h3>Checklist <span className="muted">({finished}/{total} done)</span></h3>
+            <div className="meter" role="img" aria-label={finished + ' of ' + total + ' tasks done'}><div style={{ width: (total ? Math.round((finished / total) * 100) : 0) + '%' }} /></div>
             <ul className="checklist">
               {plan.checklist.map((c, i) => (
                 <li key={i}>
-                  <label><input type="checkbox" /> <span>{c.task}</span></label>
+                  <label className={done[i] ? 'done' : ''}><input type="checkbox" checked={Boolean(done[i])} onChange={() => toggle(i)} /> <span>{c.task}</span></label>
                   {c.when && <em>{c.when}</em>}
                 </li>
               ))}
