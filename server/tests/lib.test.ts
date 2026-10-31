@@ -81,6 +81,33 @@ describe('ollama client', () => {
     await expect(chat([{ role: 'user', content: 'hi' }])).rejects.toMatchObject({ status: 504, code: 'ai_timeout' });
   });
 
+  it('falls back to the backup model when the main one answers empty or fails', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: { body: string }) => {
+        const model = JSON.parse(init.body).model as string;
+        calls.push(model);
+        if (model.startsWith('glm')) return new Response(JSON.stringify({ message: { content: '' } }), { status: 200 });
+        return new Response(JSON.stringify({ message: { content: 'From the backup' } }), { status: 200 });
+      }),
+    );
+    expect(await chat([{ role: 'user', content: 'hi' }])).toBe('From the backup');
+    expect(calls).toEqual(['glm-5.3', 'nemotron-3-super']);
+  });
+
+  it('raises the main error when the backup fails too, and can be switched off', async () => {
+    const fetchMock = vi.fn(async () => new Response('boom', { status: 500 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(chat([{ role: 'user', content: 'hi' }])).rejects.toMatchObject({ code: 'ai_error' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    process.env.OLLAMA_FALLBACK_MODEL = 'off';
+    fetchMock.mockClear();
+    await expect(chat([{ role: 'user', content: 'hi' }])).rejects.toMatchObject({ code: 'ai_error' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    delete process.env.OLLAMA_FALLBACK_MODEL;
+  });
+
   it('fails clearly when no key is configured', async () => {
     delete process.env.OLLAMA_API_KEY;
     await expect(chat([{ role: 'user', content: 'hi' }])).rejects.toMatchObject({ code: 'ai_not_configured' });
