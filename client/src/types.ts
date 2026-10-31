@@ -62,3 +62,20 @@ export interface BudgetItem {
 }
 
 export type EventInput = Pick<EventItem, 'title' | 'eventType' | 'eventDate' | 'location' | 'guestCount' | 'budgetTotal' | 'description'>;
+
+export interface Draft {
+  title?: string;
+  eventType?: string;
+  eventDate?: string | null;
+  location?: string;
+  guestCount?: number;
+  budgetTotal?: number;
+  description?: string;
+}
+
+export interface IntakeReply {
+  reply: string;
+  draft: Draft;
+  suggestions: string[];
+  ready: boolean;
+}
