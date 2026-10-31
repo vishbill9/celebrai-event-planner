@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { authOf } from '../middleware/auth.js';
 import { dbError, idSchema, notFound, parse, wrap } from '../lib/http.js';
 import { budgetOut, type BudgetRow, type EventRow } from '../lib/mappers.js';
-import { invitationMessages, parsePlan, planMessages } from '../lib/prompts.js';
+import { creativeMessages, invitationMessages, parseCreative, parsePlan, planMessages } from '../lib/prompts.js';
 import type { ChatMessage, ChatOptions } from '../lib/ollama.js';
 import { HttpError } from '../errors.js';
 import { invitationInput, planSchema } from '../schemas.js';
@@ -33,6 +33,18 @@ export function aiRouter(llm: Llm): Router {
     const { error } = await db.from('events').update({ ai_plan: plan }).eq('id', id);
     if (error) throw dbError(error);
     res.json({ plan });
+  }));
+
+  // Creative Studio: palette, decor, menu, playlist vibes, activities and more. Saved on the event.
+  r.post('/events/:id/creative', wrap(async (req, res) => {
+    const { db } = authOf(res);
+    const id = parse(idSchema, req.params.id);
+    const event = await loadEvent(res, id);
+    const raw = await llm.chat(creativeMessages(event), { json: true, maxTokens: 3000 });
+    const creative = parseCreative(raw);
+    const { error } = await db.from('events').update({ ai_creative: creative }).eq('id', id);
+    if (error) throw dbError(error);
+    res.json({ creative });
   }));
 
   // Turn the AI budget breakdown into real budget lines.
