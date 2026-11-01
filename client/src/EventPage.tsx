@@ -8,11 +8,13 @@ import Guests from './Guests';
 import Budget from './Budget';
 import Invitation from './Invitation';
 import Studio from './Studio';
+import Venues from './Venues';
 import CardDesigner, { emojiFor } from './CardDesigner';
 
-type Tab = 'plan' | 'studio' | 'design' | 'guests' | 'budget' | 'invite';
+type Tab = 'plan' | 'venues' | 'studio' | 'design' | 'guests' | 'budget' | 'invite';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'plan', label: 'AI plan' },
+  { id: 'venues', label: 'Venues' },
   { id: 'studio', label: 'Studio' },
   { id: 'design', label: 'Card designer' },
   { id: 'guests', label: 'Guests' },
@@ -97,6 +99,7 @@ export default function EventPage() {
       </div>
 
       {tab === 'plan' && <PlanView event={event} onEvent={setEvent} hasBudget={budget.length > 0} onBudget={items => setBudget(b => b.concat(items))} />}
+      {tab === 'venues' && <Venues event={event} />}
       {tab === 'studio' && <Studio event={event} onEvent={setEvent} />}
       {tab === 'design' && <CardDesigner key={event.aiCreative ? 'c' : 'n'} event={event} />}
       {tab === 'guests' && <Guests eventId={id} guests={guests} onChange={setGuests} />}
