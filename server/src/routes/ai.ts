@@ -5,7 +5,7 @@ import { dbError, idSchema, notFound, parse, wrap } from '../lib/http.js';
 import { budgetOut, type BudgetRow, type EventRow } from '../lib/mappers.js';
 import { creativeMessages, intakeMessages, invitationMessages, parseCreative, parseIntake, parsePlan, planMessages } from '../lib/prompts.js';
 import type { ChatMessage, ChatOptions } from '../lib/ollama.js';
-import { HttpError } from '../errors.js';
+import { AiError, HttpError } from '../errors.js';
 import { intakeInput, invitationInput, planSchema } from '../schemas.js';
 
 export interface Llm {
@@ -51,8 +51,14 @@ export function aiRouter(llm: Llm): Router {
   r.post('/ai/intake', wrap(async (req, res) => {
     const { messages, draft } = parse(intakeInput, req.body ?? {});
     const today = new Date().toISOString().slice(0, 10);
-    const raw = await llm.chat(intakeMessages(messages, draft, today), { json: true, maxTokens: 600, think: false });
-    res.json(parseIntake(raw, draft));
+    const msgs = intakeMessages(messages, draft, today);
+    try {
+      // Fast path: no thinking. If the answer cannot be read, try once more with the model's normal settings.
+      res.json(parseIntake(await llm.chat(msgs, { json: true, maxTokens: 700, think: false }), draft));
+    } catch (e) {
+      if (!(e instanceof AiError) || e.code !== 'ai_bad_format') throw e;
+      res.json(parseIntake(await llm.chat(msgs, { json: true, maxTokens: 1500 }), draft));
+    }
   }));
 
   // Turn the AI budget breakdown into real budget lines.
