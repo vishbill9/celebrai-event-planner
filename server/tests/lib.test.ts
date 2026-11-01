@@ -127,6 +127,21 @@ describe('ollama client', () => {
     expect(bodies.map(b => b.think)).toEqual([false, undefined]);
   });
 
+  it('uses opts.model first and keeps the main model as a backup', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: { body: string }) => {
+        const model = JSON.parse(init.body).model as string;
+        calls.push(model);
+        if (model === 'nemotron-3-super') return new Response('boom', { status: 500 });
+        return new Response(JSON.stringify({ message: { content: 'main answered' } }), { status: 200 });
+      }),
+    );
+    expect(await chat([{ role: 'user', content: 'hi' }], { model: 'nemotron-3-super' })).toBe('main answered');
+    expect(calls).toEqual(['nemotron-3-super', 'glm-5.3']);
+  });
+
   it('uses the second backup when the first backup fails too', async () => {
     const calls: string[] = [];
     vi.stubGlobal(
