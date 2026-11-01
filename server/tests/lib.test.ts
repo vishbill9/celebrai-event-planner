@@ -112,6 +112,21 @@ describe('ollama client', () => {
     expect(bodies[1].format).toBeUndefined();
   });
 
+  it('sends think:false when asked and drops it for a model that rejects it', async () => {
+    const bodies: { think?: boolean }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: { body: string }) => {
+        const b = JSON.parse(init.body);
+        bodies.push(b);
+        if (b.think === false) return new Response('{}', { status: 400 });
+        return new Response(JSON.stringify({ message: { content: 'fast' } }), { status: 200 });
+      }),
+    );
+    expect(await chat([{ role: 'user', content: 'hi' }], { think: false })).toBe('fast');
+    expect(bodies.map(b => b.think)).toEqual([false, undefined]);
+  });
+
   it('uses the second backup when the first backup fails too', async () => {
     const calls: string[] = [];
     vi.stubGlobal(
