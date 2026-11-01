@@ -66,6 +66,7 @@ export default function Venues({ event }: { event: EventItem }) {
       {saved && (
         <>
           <p className="muted venue-note">Ideas from the AI's general knowledge. Ratings are estimates, so check current reviews, availability and prices on Google Maps before you book.</p>
+          {saved.venues.length === 0 && <p className="card">No well-known venues came up near {saved.area}. Try a city or neighbourhood, like Zirakpur or Sector 17, Chandigarh.</p>}
           <div className="venue-grid">
             {saved.venues.map(v => (
               <article key={v.name + v.area} className="card venue-card">
