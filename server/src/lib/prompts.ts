@@ -153,8 +153,8 @@ export interface IntakeResult {
   ready: boolean;
 }
 
-/** Read the intake answer. Throws a 502 when it cannot be read, so unparsed model text is never shown. */
-export function parseIntake(raw: string, draft: Draft): IntakeResult {
+/** Read the intake answer. Throws a 502 when it cannot be read, so unparsed model text is never shown. rescue=true (last resort) keeps just a complete "reply" string from cut-off JSON. */
+export function parseIntake(raw: string, draft: Draft, rescue = false): IntakeResult {
   const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(FENCE, '').trim();
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
@@ -169,7 +169,7 @@ export function parseIntake(raw: string, draft: Draft): IntakeResult {
   const parsed = intakeOutSchema.safeParse(data);
   if (!parsed.success) {
     // Cut-off JSON: rescue a complete "reply" string if there is one. Never show raw model text (it can be reasoning).
-    const m = /"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(cleaned);
+    const m = rescue ? /"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(cleaned) : null;
     if (m) {
       try {
         const reply = String(JSON.parse('"' + m[1] + '"')).trim();
