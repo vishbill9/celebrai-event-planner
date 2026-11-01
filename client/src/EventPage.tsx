@@ -9,7 +9,8 @@ import Budget from './Budget';
 import Invitation from './Invitation';
 import Studio from './Studio';
 import Venues from './Venues';
-import CardDesigner, { emojiFor } from './CardDesigner';
+import CardDesigner from './CardDesigner';
+import { emojiFor } from './cardSvg';
 
 type Tab = 'plan' | 'venues' | 'studio' | 'design' | 'guests' | 'budget' | 'invite';
 const TABS: { id: Tab; label: string }[] = [
