@@ -22,7 +22,7 @@ a { color: var(--primary); }
 .topbar-right { display: flex; align-items: center; gap: .75rem; min-width: 0; }
 .who { color: var(--muted); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
 
-.page { max-width: 880px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+.page { max-width: 880px; margin: 0 auto; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
 .section-title { margin: 8px 0 0; }
 .empty { text-align: center; color: var(--muted); padding: 1.5rem 1rem; border: 2px dashed var(--line); border-radius: var(--radius); }
@@ -137,3 +137,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .stat-ring i::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--bg); }
 .checklist label.done span { text-decoration: line-through; opacity: .55; }
 @media (max-width: 760px) { .designer { grid-template-columns: 1fr; } .designer-preview { position: static; } }
+
+
+/* Mobile: long emails or names must wrap, and wide tables scroll inside their card instead of widening the page */
+.table td { overflow-wrap: anywhere; }
+.table select { min-width: 92px; }
+.table-wrap { max-width: 100%; }
