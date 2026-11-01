@@ -52,13 +52,33 @@ export function aiRouter(llm: Llm): Router {
     const { messages, draft } = parse(intakeInput, req.body ?? {});
     const today = new Date().toISOString().slice(0, 10);
     const msgs = intakeMessages(messages, draft, today);
+    const badFormat = (e: unknown): boolean => e instanceof AiError && e.code === 'ai_bad_format';
+    // Fast path: no thinking.
+    const fast = await llm.chat(msgs, { json: true, maxTokens: 700, think: false });
     try {
-      // Fast path: no thinking. If the answer cannot be read, try once more with the model's normal settings.
-      res.json(parseIntake(await llm.chat(msgs, { json: true, maxTokens: 700, think: false }), draft));
+      res.json(parseIntake(fast, draft));
+      return;
     } catch (e) {
-      if (!(e instanceof AiError) || e.code !== 'ai_bad_format') throw e;
-      res.json(parseIntake(await llm.chat(msgs, { json: true, maxTokens: 1500 }), draft));
+      if (!badFormat(e)) throw e;
     }
+    // Unreadable: try once more with the model's normal settings.
+    const slow = await llm.chat(msgs, { json: true, maxTokens: 1500 });
+    try {
+      res.json(parseIntake(slow, draft));
+      return;
+    } catch (e) {
+      if (!badFormat(e)) throw e;
+    }
+    // Last resort: keep a complete reply sentence (no new fields) rather than failing the turn.
+    for (const raw of [slow, fast]) {
+      try {
+        res.json(parseIntake(raw, draft, true));
+        return;
+      } catch (e) {
+        if (!badFormat(e)) throw e;
+      }
+    }
+    throw new AiError('The AI answer could not be read. Please try again.', 'ai_bad_format', 502);
   }));
 
   // Turn the AI budget breakdown into real budget lines.
