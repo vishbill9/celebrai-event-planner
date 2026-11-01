@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
@@ -16,10 +17,14 @@
     "react-router-dom": "7.18.5"
   },
   "devDependencies": {
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
     "@vitejs/plugin-react": "4.3.4",
+    "jsdom": "29.1.1",
     "typescript": "5.7.2",
-    "vite": "6.4.5"
+    "vite": "6.4.5",
+    "vitest": "5.0.5"
   }
 }
