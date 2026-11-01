@@ -148,7 +148,8 @@ const asStrings = (v: unknown): unknown =>
 
 /** The AI answer. Lenient on everything except the reply sentence. */
 export const intakeOutSchema = z.object({
-  reply: z.string().trim().min(1).max(600),
+  // A real sentence: placeholders such as "..." are rejected so the turn is retried.
+  reply: z.string().trim().max(600).refine(r => /\p{L}{3,}/u.test(r), 'The reply has no words'),
   fields: z.preprocess(asObject, draftSchema),
   suggestions: z.preprocess(asStrings, z.array(z.string())),
   ready: z.boolean().catch(false),
