@@ -197,6 +197,14 @@ describe('AI plan', () => {
     expect(b.body.reply).toBe('Noted!');
   });
 
+  it('chat intake treats a placeholder reply like "..." as unreadable and retries', async () => {
+    const answers = ['{"reply":"...","fields":{},"suggestions":[],"ready":false}', '{"reply":"Lovely! Which city?","fields":{},"suggestions":["Delhi"],"ready":false}'];
+    let n = 0;
+    const res = await request(createApp({ auth: authAs(fakeDb(sampleEvent)), llm: { chat: async () => answers[n++] } })).post('/api/ai/intake').set(AUTH).send({ messages: [{ role: 'user', content: 'hi' }] }).expect(200);
+    expect(n).toBe(2);
+    expect(res.body.reply).toBe('Lovely! Which city?');
+  });
+
   it('chat intake never shows raw model text, retries once, and rescues a cut-off reply', async () => {
     let calls = 0;
     const reasoning = { chat: async () => { calls++; return 'Let me look at the conversation. The host is planning... Fields: only details'; } };
