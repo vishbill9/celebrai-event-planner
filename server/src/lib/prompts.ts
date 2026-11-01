@@ -173,7 +173,7 @@ export function parseIntake(raw: string, draft: Draft, rescue = false): IntakeRe
     if (m) {
       try {
         const reply = String(JSON.parse('"' + m[1] + '"')).trim();
-        if (reply) return { reply: reply.slice(0, 600), draft, suggestions: [], ready: false };
+        if (/\p{L}{3,}/u.test(reply)) return { reply: reply.slice(0, 600), draft, suggestions: [], ready: false };
       } catch {
         /* fall through */
       }
