@@ -115,13 +115,16 @@ export type Creative = z.infer<typeof creativeSchema>;
 
 // Chat intake: the AI fills these fields as the host talks. Invalid or unknown values are dropped.
 const opt = <T extends z.ZodTypeAny>(t: T) => t.optional().catch(undefined);
+/** Models sometimes send numbers as strings ("25", "40,000"); accept those. */
+const num = (t: z.ZodTypeAny) =>
+  z.preprocess(v => (typeof v === 'string' && /^[\d,]+(\.\d+)?$/.test(v.trim()) ? Number(v.replace(/,/g, '')) : v), t);
 export const draftSchema = z.object({
   title: opt(z.string().trim().max(120)),
   eventType: opt(z.string().trim().max(60)),
   eventDate: opt(day.nullable()),
   location: opt(z.string().trim().max(160)),
-  guestCount: opt(z.number().int().min(0).max(5000)),
-  budgetTotal: opt(money),
+  guestCount: opt(num(z.number().int().min(0).max(5000))),
+  budgetTotal: opt(num(money)),
   description: opt(z.string().trim().max(2000)),
 });
 export type Draft = z.infer<typeof draftSchema>;
@@ -134,9 +137,19 @@ export const intakeInput = z.object({
   draft: draftSchema.default({}),
 });
 
+const asObject = (v: unknown): unknown => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+const asStrings = (v: unknown): unknown =>
+  Array.isArray(v)
+    ? v
+        .map(x => (typeof x === 'number' ? String(x) : x))
+        .filter((x): x is string => typeof x === 'string' && x.trim().length > 0 && x.length <= 60)
+        .slice(0, 8)
+    : [];
+
+/** The AI answer. Lenient on everything except the reply sentence. */
 export const intakeOutSchema = z.object({
   reply: z.string().trim().min(1).max(600),
-  fields: draftSchema.default({}),
-  suggestions: z.array(z.string().trim().min(1).max(60)).max(8).catch([]),
+  fields: z.preprocess(asObject, draftSchema),
+  suggestions: z.preprocess(asStrings, z.array(z.string())),
   ready: z.boolean().catch(false),
 });
