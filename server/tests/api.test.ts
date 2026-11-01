@@ -197,6 +197,12 @@ describe('AI plan', () => {
     const cut = { chat: async () => '{"reply": "Lovely! How many guests?", "fields": {"location": "Zirak' };
     const rescued = await request(createApp({ auth: authAs(fakeDb(sampleEvent)), llm: cut })).post('/api/ai/intake').set(AUTH).send({ messages: [{ role: 'user', content: 'hi' }] }).expect(200);
     expect(rescued.body.reply).toBe('Lovely! How many guests?');
+    const answers = ['{"reply": "Lovely! How many guests?", "fields": {"location": "Zirak', '{"reply":"Lovely! How many guests?","fields":{"location":"Zirakpur"},"suggestions":["20","40"],"ready":false}'];
+    let n = 0;
+    const retried = await request(createApp({ auth: authAs(fakeDb(sampleEvent)), llm: { chat: async () => answers[n++] } })).post('/api/ai/intake').set(AUTH).send({ messages: [{ role: 'user', content: 'hi' }] }).expect(200);
+    expect(n).toBe(2);
+    expect(retried.body.draft.location).toBe('Zirakpur');
+    expect(retried.body.suggestions).toEqual(['20', '40']);
     await request(app).post('/api/ai/intake').set(AUTH).send({ messages: [] }).expect(400);
   });
 
