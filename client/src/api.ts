@@ -2,6 +2,20 @@
 import { getSupabase } from './supabase';
 import type { BudgetItem, Creative, Draft, EventInput, EventItem, Guest, IntakeReply, Plan, Rsvp } from './types';
 
+export interface Venue {
+  name: string;
+  area: string;
+  venueType: string;
+  rating: number;
+  capacityMin: number;
+  capacityMax: number;
+  amenities: string[];
+  priceNote: string;
+  whyItFits: string;
+  mapsUrl: string;
+  fits: boolean | null;
+}
+
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) {
     super(message);
@@ -49,6 +63,7 @@ export const api = {
 
   generatePlan: (eventId: string) => call<{ plan: Plan }>('POST', '/events/' + eventId + '/plan').then(r => r.plan),
   generateCreative: (eventId: string) => call<{ creative: Creative }>('POST', '/events/' + eventId + '/creative').then(r => r.creative),
+  findVenues: (eventId: string, area?: string) => call<{ area: string; venues: Venue[] }>('POST', '/events/' + eventId + '/venues', area ? { area } : {}),
   intake: (messages: { role: 'user' | 'assistant'; content: string }[], draft: Draft) => call<IntakeReply>('POST', '/ai/intake', { messages, draft }),
   applyPlanBudget: (eventId: string) => call<{ items: BudgetItem[] }>('POST', '/events/' + eventId + '/plan/apply-budget').then(r => r.items),
   writeInvitation: (eventId: string, tone: string) => call<{ text: string }>('POST', '/events/' + eventId + '/invitation', { tone }).then(r => r.text),
