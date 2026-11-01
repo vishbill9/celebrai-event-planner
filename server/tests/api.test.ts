@@ -231,3 +231,31 @@ describe('AI plan', () => {
     expect(res.body.error.code).toBe('no_plan');
   });
 });
+
+describe('venue ideas', () => {
+  const venuesJson = JSON.stringify({
+    venues: [
+      { name: 'Small Cafe', area: 'Zirakpur', venueType: 'Cafe', rating: 4.6, capacityMin: 10, capacityMax: 20, amenities: ['Parking'], priceNote: 'Rs 800 pp', whyItFits: 'Cosy.' },
+      { name: 'Grand Hall', area: 'Chandigarh', venueType: 'Banquet', rating: '4.2', capacityMin: 30, capacityMax: 300, amenities: ['Parking', 'AC', 'Stage'], priceNote: 'Rs 1500 pp', whyItFits: 'Big.' },
+      { nope: true },
+    ],
+  });
+
+  it('suggests venues, links maps and sorts those that fit first', async () => {
+    const db = fakeDb(sampleEvent);
+    const app = createApp({ auth: authAs(db), llm: { chat: async () => venuesJson } });
+    const res = await request(app).post('/api/events/' + EVENT_ID + '/venues').set(AUTH).send({ area: 'Chandigarh' }).expect(200);
+    expect(res.body.venues).toHaveLength(2);
+    expect(res.body.venues[0].name).toBe('Grand Hall');
+    expect(res.body.venues[0].mapsUrl).toContain('https://www.google.com/maps/search/?api=1&query=');
+    expect(res.body.venues.every((v: { rating: number }) => typeof v.rating === 'number')).toBe(true);
+  });
+
+  it('retries once when the first answer is unreadable', async () => {
+    let calls = 0;
+    const llm = { chat: async () => (++calls === 1 ? 'sorry, no json' : venuesJson) };
+    const app = createApp({ auth: authAs(fakeDb(sampleEvent)), llm });
+    await request(app).post('/api/events/' + EVENT_ID + '/venues').set(AUTH).send({ area: 'Delhi' }).expect(200);
+    expect(calls).toBe(2);
+  });
+});
