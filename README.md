@@ -3,7 +3,7 @@
 CelebrAI helps you plan any celebration. Chat with the AI to set up an event, and it (GLM-5.3 on Ollama Cloud) drafts a theme, timeline, checklist, budget split and tips. Then find venues, design the look and the invitation card, manage guests and RSVPs, and track spending against your budget.
 
 - **Live app:** https://celebrai-event-planner-d6gv.onrender.com
-- **Walkthrough video:** _add the link here_
+- **Walkthrough video:** https://drive.google.com/file/d/1dtEjXy8wQ8c7T5tWXtKHAxspAW96gSPv/view?usp=sharing
 
 ## Try it without installing anything
 
