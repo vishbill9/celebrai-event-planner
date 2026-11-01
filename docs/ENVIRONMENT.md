@@ -8,14 +8,19 @@ Names only live in `.env.example`. Real values are set in the Render dashboard (
 | `OLLAMA_BASE_URL` | yes | no | `https://ollama.com` |
 | `OLLAMA_MODEL` | yes | no | `glm-5.3` (the server also tries `glm-5.3:cloud` if the plain name is not found) |
 | `OLLAMA_FALLBACK_MODEL` | no | no | Comma-separated backup models, tried in order when the main model errors, times out or answers empty. Default `nemotron-3-super,beam:cloud` (Nemotron Super 3, then beam); `off` disables them |
+| `OLLAMA_CHAT_MODEL` | no | no | Model used only for the new-event chat, for speed (for example `nemotron-3-super`). Empty means use `OLLAMA_MODEL`. Backups still apply |
 | `SUPABASE_URL` | yes | no | Project URL, e.g. `https://abcd.supabase.co` |
 | `SUPABASE_ANON_KEY` | yes | no (public by design) | Used by the browser and by user-scoped API calls; RLS protects data |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | **yes** | Used only for the health-check database ping. Server only. |
 | `NODE_ENV` | yes | no | `production` on Render |
 | `PORT` | auto | no | Render injects it; defaults to 8080 locally |
-| `FRONTEND_URL` | yes | no | Public URL of the app, e.g. `https://celebrai-event-planner.onrender.com` |
+| `FRONTEND_URL` | yes | no | Public URL of the app, e.g. `https://celebrai-event-planner-d6gv.onrender.com` |
 | `CORS_ORIGIN` | yes | no | Comma-separated allowed origins; normally the same as `FRONTEND_URL` |
 | `OLLAMA_TIMEOUT_MS` | no | no | Per-request AI timeout in milliseconds (default 60000) |
 | `LOG_LEVEL` | no | no | `info` (default), `debug`, `warn`... |
 
 If a required variable is missing the server still starts, logs the missing **names** (never values), and `/api/health` reports `not_configured` for the affected check.
+
+## Google sign-in (optional)
+
+No server variable is needed. Create a Google OAuth client (Web application) with the redirect URI `https://<project>.supabase.co/auth/v1/callback`, then enable **Authentication -> Sign In / Providers -> Google** in Supabase and paste the client ID and secret there. In **Authentication -> URL Configuration** set the Site URL and a Redirect URL to the public app URL.
