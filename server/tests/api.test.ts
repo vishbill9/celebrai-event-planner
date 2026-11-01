@@ -186,6 +186,17 @@ describe('AI plan', () => {
     expect(res.body.ready).toBe(true);
   });
 
+  it('chat intake tolerates null fields, numeric suggestions and numbers sent as strings', async () => {
+    const odd = JSON.stringify({ reply: 'Great! And the budget?', fields: { guestCount: '25', budgetTotal: '40,000' }, suggestions: [20000, 40000, 'Rs 60000'], ready: false });
+    const nul = JSON.stringify({ reply: 'Noted!', fields: null, suggestions: null });
+    const app = createApp({ auth: authAs(fakeDb(sampleEvent)), llm: { chat: async () => odd } });
+    const a = await request(app).post('/api/ai/intake').set(AUTH).send({ messages: [{ role: 'user', content: '25 kids' }] }).expect(200);
+    expect(a.body.draft).toMatchObject({ guestCount: 25, budgetTotal: 40000 });
+    expect(a.body.suggestions).toEqual(['20000', '40000', 'Rs 60000']);
+    const b = await request(createApp({ auth: authAs(fakeDb(sampleEvent)), llm: { chat: async () => nul } })).post('/api/ai/intake').set(AUTH).send({ messages: [{ role: 'user', content: 'x' }] }).expect(200);
+    expect(b.body.reply).toBe('Noted!');
+  });
+
   it('chat intake never shows raw model text, retries once, and rescues a cut-off reply', async () => {
     let calls = 0;
     const reasoning = { chat: async () => { calls++; return 'Let me look at the conversation. The host is planning... Fields: only details'; } };
