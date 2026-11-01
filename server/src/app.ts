@@ -13,6 +13,7 @@ import { logger } from './logger.js';
 import { chat } from './lib/ollama.js';
 import { defaultAuthDeps, requireAuth, type AuthDeps } from './middleware/auth.js';
 import { aiRouter, type Llm } from './routes/ai.js';
+import { venuesRouter } from './routes/venues.js';
 import { budgetRouter } from './routes/budget.js';
 import { eventsRouter } from './routes/events.js';
 import { guestsRouter } from './routes/guests.js';
@@ -89,9 +90,10 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use('/api/events/:id/plan', aiLimit);
   app.use('/api/events/:id/invitation', aiLimit);
   app.use('/api/events/:id/creative', aiLimit);
+  app.use('/api/events/:id/venues', aiLimit);
   app.use('/api/ai/intake', rateLimit({ windowMs: 10 * 60_000, limit: 80, standardHeaders: 'draft-7', legacyHeaders: false, message: limited('You have chatted a lot just now. Please wait a few minutes.') }));
   app.use('/api/events', auth, eventsRouter());
-  app.use('/api', auth, guestsRouter(), budgetRouter(), aiRouter(llm));
+  app.use('/api', auth, guestsRouter(), budgetRouter(), aiRouter(llm), venuesRouter(llm));
   app.use('/api', (_req, _res, next) => next(new HttpError(404, 'That API route does not exist.', 'not_found')));
 
   // The built React client (single-service deployment). Missing in API-only development.
