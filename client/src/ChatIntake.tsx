@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api } from './api';
 import type { Draft, EventInput } from './types';
-import { emojiFor } from './CardDesigner';
+import { emojiFor } from './cardSvg';
 import { errorText, formatDate, money } from './ui';
 
 interface Msg {
