@@ -5,6 +5,7 @@ import { dbError, idSchema, notFound, parse, wrap } from '../lib/http.js';
 import { budgetOut, type BudgetRow, type EventRow } from '../lib/mappers.js';
 import { creativeMessages, intakeMessages, invitationMessages, parseCreative, parseIntake, parsePlan, planMessages } from '../lib/prompts.js';
 import type { ChatMessage, ChatOptions } from '../lib/ollama.js';
+import { getConfig } from '../config.js';
 import { AiError, HttpError } from '../errors.js';
 import { logger } from '../logger.js';
 import { intakeInput, invitationInput, planSchema } from '../schemas.js';
@@ -53,17 +54,19 @@ export function aiRouter(llm: Llm): Router {
     const { messages, draft } = parse(intakeInput, req.body ?? {});
     const today = new Date().toISOString().slice(0, 10);
     const msgs = intakeMessages(messages, draft, today);
+    const model = getConfig().ollama.chatModel || undefined; // optional faster model just for chat
     const badFormat = (e: unknown): boolean => e instanceof AiError && e.code === 'ai_bad_format';
     // Fast path: no thinking.
-    const fast = await llm.chat(msgs, { json: true, maxTokens: 700, think: false });
+    const fast = await llm.chat(msgs, { json: true, maxTokens: 700, think: false, model });
     try {
       res.json(parseIntake(fast, draft));
       return;
     } catch (e) {
       if (!badFormat(e)) throw e;
+      logger.warn({ sample: fast.slice(0, 200) }, 'fast chat answer unreadable, retrying');
     }
     // Unreadable: try once more with the model's normal settings.
-    const slow = await llm.chat(msgs, { json: true, maxTokens: 1500 });
+    const slow = await llm.chat(msgs, { json: true, maxTokens: 1500, model });
     try {
       res.json(parseIntake(slow, draft));
       return;
