@@ -51,7 +51,7 @@ export function aiRouter(llm: Llm): Router {
   r.post('/ai/intake', wrap(async (req, res) => {
     const { messages, draft } = parse(intakeInput, req.body ?? {});
     const today = new Date().toISOString().slice(0, 10);
-    const raw = await llm.chat(intakeMessages(messages, draft, today), { json: true, maxTokens: 900 });
+    const raw = await llm.chat(intakeMessages(messages, draft, today), { json: true, maxTokens: 600, think: false });
     res.json(parseIntake(raw, draft));
   }));
 
