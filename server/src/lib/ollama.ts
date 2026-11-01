@@ -14,6 +14,8 @@ export interface ChatOptions {
   maxTokens?: number;
   /** false asks reasoning models to skip their thinking phase (much faster for short chat turns). */
   think?: boolean;
+  /** Use this model first instead of the configured main one (the main model then becomes a backup). */
+  model?: string;
   signal?: AbortSignal;
 }
 
@@ -89,21 +91,22 @@ async function ask(model: string, messages: ChatMessage[], opts: ChatOptions): P
 export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Promise<string> {
   const { ollama } = getConfig();
   if (!ollama.apiKey) throw new AiError('The AI service is not configured yet.', 'ai_not_configured');
+  const firstModel = opts.model || ollama.model;
+  const backups = [ollama.model, ...ollama.fallbackModels].filter((m, i, all) => m !== firstModel && all.indexOf(m) === i);
   try {
-    return await ask(ollama.model, messages, opts);
+    return await ask(firstModel, messages, opts);
   } catch (first) {
     let last: unknown = first;
-    for (const backup of ollama.fallbackModels) {
-      if (backup === ollama.model) continue;
+    for (const backup of backups) {
       if (opts.signal?.aborted) break;
-      logger.warn({ failed: ollama.model, backup, code: (last as AiError).code }, 'AI model failed, trying backup model');
+      logger.warn({ failed: firstModel, backup, code: (last as AiError).code }, 'AI model failed, trying backup model');
       try {
         return await ask(backup, messages, opts);
       } catch (e) {
         last = e;
       }
     }
-    if (ollama.fallbackModels.length) logger.error({ code: (last as AiError).code }, 'AI backup models failed too');
+    if (backups.length) logger.error({ code: (last as AiError).code }, 'AI backup models failed too');
     throw first;
   }
 }
