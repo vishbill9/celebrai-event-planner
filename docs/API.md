@@ -51,4 +51,7 @@ Common statuses: 400 invalid input, 401 not signed in, 404 not found (also for o
 |---|---|---|
 | POST | `/events/:id/plan` | Generates and saves the plan: `{plan:{summary, theme, surprise_idea, timeline[], checklist[], budget_breakdown[], tips[]}}` |
 | POST | `/events/:id/plan/apply-budget` | Turns the saved plan's budget breakdown into budget lines: `201 {items}`; `409 no_plan` if no plan yet |
+| POST | `/events/:id/creative` | Creative Studio concept (palette, decor, menu, playlist vibes, activities, return gifts...); saved in `events.ai_creative`: `{creative}` |
+| POST | `/events/:id/venues` | Body `{area?}` (defaults to the event location) -> `{area, venues:[{name, area, venueType, rating, capacityMin, capacityMax, amenities[], priceNote, whyItFits, mapsUrl, fits}]}`. Ideas come from the AI's general knowledge and are not verified; `fits` compares capacity with the guest count. `400 location_needed` if there is no location. Not stored. |
+| POST | `/ai/intake` | Chat setup turn. Body `{messages:[{role:"user" or "assistant", content}] (1-30, each up to 600 chars), draft}` -> `{reply, draft, suggestions[], ready}`. Limited to 80 per 10 minutes. Not stored. |
 | POST | `/events/:id/invitation` | Body `{tone: "warm", "playful" or "formal"}` -> `{text}` (not stored) |
