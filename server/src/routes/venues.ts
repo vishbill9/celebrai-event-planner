@@ -52,7 +52,7 @@ function parseVenues(raw: string): z.infer<typeof venuesSchema> {
     const r = venueSchema.safeParse(v);
     return r.success ? [r.data] : [];
   });
-  if (venues.length === 0) throw new AiError('The AI answer was incomplete. Please try again.', 'ai_bad_format', 502);
+  if (list.length > 0 && venues.length === 0) throw new AiError('The AI answer was incomplete. Please try again.', 'ai_bad_format', 502);
   return { venues };
 }
 
