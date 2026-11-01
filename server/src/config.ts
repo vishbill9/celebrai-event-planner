@@ -18,7 +18,7 @@ export interface Config {
   nodeEnv: string;
   isProd: boolean;
   port: number;
-  ollama: { apiKey: string; baseUrl: string; model: string; fallbackModels: string[]; timeoutMs: number };
+  ollama: { apiKey: string; baseUrl: string; model: string; chatModel: string; fallbackModels: string[]; timeoutMs: number };
   supabase: { url: string; anonKey: string; serviceRoleKey: string };
   frontendUrl: string;
   corsOrigins: string[];
@@ -44,6 +44,8 @@ export function getConfig(env: NodeJS.ProcessEnv = process.env): Config {
       apiKey: clean(env.OLLAMA_API_KEY),
       baseUrl: trimSlash(clean(env.OLLAMA_BASE_URL) || 'https://ollama.com'),
       model: clean(env.OLLAMA_MODEL) || 'glm-5.3',
+      // Optional model for the new-event chat only (empty = use OLLAMA_MODEL).
+      chatModel: clean(env.OLLAMA_CHAT_MODEL),
       // Backup models, tried in order when the main one fails. Set OLLAMA_FALLBACK_MODEL=off to disable.
       fallbackModels: fallbacks(clean(env.OLLAMA_FALLBACK_MODEL)),
       timeoutMs: Number(env.OLLAMA_TIMEOUT_MS) || 60_000,
