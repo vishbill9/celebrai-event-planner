@@ -186,11 +186,17 @@ describe('AI plan', () => {
     expect(res.body.ready).toBe(true);
   });
 
-  it('chat intake survives a plain-text AI answer and rejects an empty chat', async () => {
-    const app = createApp({ auth: authAs(fakeDb(sampleEvent)), llm: { chat: async () => 'Sounds fun, tell me more!' } });
-    const ok = await request(app).post('/api/ai/intake').set(AUTH).send({ messages: [{ role: 'user', content: 'hi' }] }).expect(200);
-    expect(ok.body.reply).toContain('Sounds fun');
-    expect(ok.body.ready).toBe(false);
+  it('chat intake never shows raw model text, retries once, and rescues a cut-off reply', async () => {
+    let calls = 0;
+    const reasoning = { chat: async () => { calls++; return 'Let me look at the conversation. The host is planning... Fields: only details'; } };
+    const app = createApp({ auth: authAs(fakeDb(sampleEvent)), llm: reasoning });
+    const bad = await request(app).post('/api/ai/intake').set(AUTH).send({ messages: [{ role: 'user', content: 'hi' }] }).expect(502);
+    expect(bad.body.error.code).toBe('ai_bad_format');
+    expect(JSON.stringify(bad.body)).not.toContain('Let me look');
+    expect(calls).toBe(2);
+    const cut = { chat: async () => '{"reply": "Lovely! How many guests?", "fields": {"location": "Zirak' };
+    const rescued = await request(createApp({ auth: authAs(fakeDb(sampleEvent)), llm: cut })).post('/api/ai/intake').set(AUTH).send({ messages: [{ role: 'user', content: 'hi' }] }).expect(200);
+    expect(rescued.body.reply).toBe('Lovely! How many guests?');
     await request(app).post('/api/ai/intake').set(AUTH).send({ messages: [] }).expect(400);
   });
 
