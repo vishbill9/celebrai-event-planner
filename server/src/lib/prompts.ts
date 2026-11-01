@@ -153,7 +153,7 @@ export interface IntakeResult {
   ready: boolean;
 }
 
-/** Read the intake answer. Plain text instead of JSON is tolerated: it becomes the reply with no new fields. */
+/** Read the intake answer. Throws a 502 when it cannot be read, so unparsed model text is never shown. */
 export function parseIntake(raw: string, draft: Draft): IntakeResult {
   const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(FENCE, '').trim();
   const start = cleaned.indexOf('{');
@@ -168,9 +168,17 @@ export function parseIntake(raw: string, draft: Draft): IntakeResult {
   }
   const parsed = intakeOutSchema.safeParse(data);
   if (!parsed.success) {
-    const text = cleaned.replace(/[{}"]/g, '').slice(0, 400).trim();
-    if (!text) throw new AiError('The AI answer could not be read. Please try again.', 'ai_bad_format', 502);
-    return { reply: text, draft, suggestions: [], ready: false };
+    // Cut-off JSON: rescue a complete "reply" string if there is one. Never show raw model text (it can be reasoning).
+    const m = /"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(cleaned);
+    if (m) {
+      try {
+        const reply = String(JSON.parse('"' + m[1] + '"')).trim();
+        if (reply) return { reply: reply.slice(0, 600), draft, suggestions: [], ready: false };
+      } catch {
+        /* fall through */
+      }
+    }
+    throw new AiError('The AI answer could not be read. Please try again.', 'ai_bad_format', 502);
   }
   const merged: Record<string, unknown> = { ...draft };
   for (const [k, v] of Object.entries(parsed.data.fields)) {
