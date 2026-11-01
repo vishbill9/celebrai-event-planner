@@ -6,6 +6,7 @@ import { budgetOut, type BudgetRow, type EventRow } from '../lib/mappers.js';
 import { creativeMessages, intakeMessages, invitationMessages, parseCreative, parseIntake, parsePlan, planMessages } from '../lib/prompts.js';
 import type { ChatMessage, ChatOptions } from '../lib/ollama.js';
 import { AiError, HttpError } from '../errors.js';
+import { logger } from '../logger.js';
 import { intakeInput, invitationInput, planSchema } from '../schemas.js';
 
 export interface Llm {
@@ -78,6 +79,7 @@ export function aiRouter(llm: Llm): Router {
         if (!badFormat(e)) throw e;
       }
     }
+    logger.warn({ fast: fast.slice(0, 300), slow: slow.slice(0, 300) }, 'chat intake answer unreadable');
     throw new AiError('The AI answer could not be read. Please try again.', 'ai_bad_format', 502);
   }));
 
