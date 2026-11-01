@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from './api';
 import type { EventItem } from './types';
-import { emojiFor } from './CardDesigner';
+import { emojiFor } from './cardSvg';
 import ChatIntake from './ChatIntake';
 import './chat.css';
 import type { EventInput } from './types';
