@@ -82,7 +82,7 @@ export default function Venues({ event }: { event: EventItem }) {
                 {v.priceNote && <p className="venue-cap"><b>Cost</b> {v.priceNote}</p>}
                 {v.whyItFits && <p>{v.whyItFits}</p>}
                 {v.amenities.length > 0 && <ul className="amenities">{v.amenities.map(a => <li key={a}>{a}</li>)}</ul>}
-                <a className="btn ghost small" href={v.mapsUrl} target="_blank" rel="noopener noreferrer">View on Google Maps</a>
+                {v.mapsUrl.startsWith('https://www.google.com/maps/') && <a className="btn ghost small" href={v.mapsUrl} target="_blank" rel="noopener noreferrer">View on Google Maps</a>}
               </article>
             ))}
           </div>
