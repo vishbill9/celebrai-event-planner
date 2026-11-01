@@ -12,6 +12,8 @@ export interface ChatMessage {
 export interface ChatOptions {
   json?: boolean;
   maxTokens?: number;
+  /** false asks reasoning models to skip their thinking phase (much faster for short chat turns). */
+  think?: boolean;
   signal?: AbortSignal;
 }
 
@@ -25,6 +27,9 @@ export function stripThinking(text: string): string {
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 }
 
+// Models that rejected think:false; we stop sending it to them.
+const noThinkSwitch = new Set<string>();
+
 /** Ask one model (trying its ":cloud" alias if the plain name is not found). Throws AiError on any failure. */
 async function ask(model: string, messages: ChatMessage[], opts: ChatOptions): Promise<string> {
   const { ollama } = getConfig();
@@ -34,6 +39,7 @@ async function ask(model: string, messages: ChatMessage[], opts: ChatOptions): P
     for (let attempt = 0; attempt < 2; attempt++) {
       const loose = attempt === 1;
       const tokens = Math.min(Math.round((opts.maxTokens ?? 3000) * (loose ? 1.5 : 1)), 6000);
+      const thinkOff = opts.think === false && !noThinkSwitch.has(name);
       const timeout = AbortSignal.timeout(ollama.timeoutMs);
       let res: Response;
       try {
@@ -45,6 +51,7 @@ async function ask(model: string, messages: ChatMessage[], opts: ChatOptions): P
             messages,
             stream: false,
             ...(opts.json && !loose ? { format: 'json' } : {}),
+            ...(thinkOff ? { think: false } : {}),
             options: { temperature: 0.6, num_predict: tokens },
           }),
           signal: opts.signal ? AbortSignal.any([opts.signal, timeout]) : timeout,
@@ -57,6 +64,11 @@ async function ask(model: string, messages: ChatMessage[], opts: ChatOptions): P
         throw new AiError('The AI service could not be reached. Please try again.', 'ai_unreachable');
       }
       if (res.status === 404) break; // model name not found: try the next candidate
+      if (res.status === 400 && thinkOff) {
+        noThinkSwitch.add(name); // this model does not accept think:false: repeat without it
+        attempt--;
+        continue;
+      }
       if (!res.ok) throw new AiError('The AI service returned an error (' + res.status + '). Please try again.', 'ai_error');
       const body = (await res.json()) as { message?: { content?: string }; done_reason?: string };
       const out = stripThinking(body.message?.content ?? '');
